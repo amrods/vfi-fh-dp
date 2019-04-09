@@ -74,7 +74,7 @@ function solverest!(dp::NamedTuple, Ldict::Array{Ty}, Cdict::Array{Ty}, A1dict::
                     initial_x = [[100.0, 0.0], [0.0, 0.0], [0.0, 100.0]]
                     opt = nelder_mead( x -> -(u(transf(x[2])*(w[t] + ξ[i])+ grid_A[s]*(1+r) - x[1], transf(x[2])) +
                             β*interp_func_t1(x[1]) ),
-                            initial_x, 1e-8 )
+                            initial_x, 1e-12 )
                     Vdict[i, s, t] = -opt[1]
                     xstar = opt[2]
                     Ldict[i, s, t] = transf(xstar[2])
