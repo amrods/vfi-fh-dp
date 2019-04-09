@@ -56,7 +56,7 @@ function solverest!(dp::NamedTuple, Ldict::Array{Ty}, Cdict::Array{Ty}, A1dict::
         for s in 1:length(grid_A)
             for i in 1:n
                 # x[1] is assets to carry forward, x[2] is labor supply
-                if w[t] + grid_A[s] * (1+r) < 0
+                if (w[t] + ξ[i]) + grid_A[s] * (1+r) < 0 # avoids opt on regions where C < 0 even with L = 1
                     Vdict[i, s, t] = -Inf
                     Ldict[i, s, t] = NaN
                     A1dict[i, s, t] = NaN
