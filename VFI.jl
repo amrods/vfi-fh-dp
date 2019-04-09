@@ -117,4 +117,5 @@ iterdict = zeros(Int, n, length(grid_A), T)
 
 dp = (u=u, T=T, β=β, r=r, n=n, w=w, grid_A=grid_A, ξ=ξ)
 
+# solve model
 @time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict, iterdict)
