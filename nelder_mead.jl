@@ -54,5 +54,5 @@ function g_nelder_mead(f, S, ε; α=1.0, β=2.0, γ=0.5, δ=0.5)
 end
 
 function nelder_mead(f, S, ε; α=1.0, β=2.0, γ=0.5)
-    g_nelder_mead(f, S, ε; α=1.0, β=2.0, γ=0.5, δ=0.5)
+    g_nelder_mead(f, S, ε; α=α, β=β, γ=γ, δ=0.5)
 end
