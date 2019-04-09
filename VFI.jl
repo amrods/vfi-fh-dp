@@ -29,12 +29,20 @@ function solvelast!(dp::NamedTuple, Ldict::Array{Ty}, Cdict::Array{Ty}, A1dict::
     T = dp.T
     for s in 1:length(grid_A)
         for i in 1:n
-            opt = optimize( x -> -u((w[T] + ξ[i])*x + grid_A[s]*(1+r), x), 0.0, 1.0 )
-            Ldict[i, s, T] = Optim.minimizer(opt)
-            Cdict[i, s, T] = (w[T] + ξ[i])*Ldict[i, s, T] + grid_A[s]*(1+r)
-            A1dict[i, s, T] = 0.0
-            Vdict[i, s, T] = -Optim.minimum(opt)
-            iterdict[i, s, T] = -1
+            if (w[T] + ξ[i]) + grid_A[s] * (1+r) < 0 # avoids opt on regions where C < 0 even with L = 1
+                Vdict[i, s, T] = -Inf
+                Ldict[i, s, T] = NaN
+                A1dict[i, s, T] = NaN
+                Cdict[i, s, T] = NaN
+                iterdict[i, s, T] = -1
+            else
+                opt = optimize( x -> -u((w[T] + ξ[i])*x + grid_A[s]*(1+r), x), 0.0, 1.0 )
+                Ldict[i, s, T] = Optim.minimizer(opt)
+                Cdict[i, s, T] = (w[T] + ξ[i])*Ldict[i, s, T] + grid_A[s]*(1+r)
+                A1dict[i, s, T] = 0.0
+                Vdict[i, s, T] = -Optim.minimum(opt)
+                iterdict[i, s, T] = -1
+            end
         end
     end
     return Ldict, Cdict, A1dict, Vdict
