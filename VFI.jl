@@ -1,6 +1,7 @@
 #! value function iteration for finite horizon dp model with continuous state
 using Optim
 using Distributions
+using Interpolations
 
 include("nelder_mead.jl")
 
