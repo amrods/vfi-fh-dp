@@ -2,12 +2,16 @@
 using StatsBase: mean, std
 
 # nelder_mead is a minimization routine
+# i also implement a slight generalization of the algorithm in KW, allowing for a flexible shrinkage parameter
 # f must be an anonymous function that takes a vector as argument, ie x -> x[1]^2 + x[2]^2
 # S must be a n+1 simplex, specified as a vector of vectors, ie [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]
 # There are no checks for whether S forms a proper simplex
-# ϵ controls the tolerance of convergence
-# α, β, and γ control the reflection, expansion, and contraction steps
-function nelder_mead(f, S, ε; α=1.0, β=2.0, γ=0.5)
+# ε controls the tolerance of convergence
+# α, β, γ, and δ control the reflection, expansion, contraction and shrinkage steps
+# Gao & Han (2010) suggest an adaptive Nelder Mead algorithm by setting the parameters as follow:
+# α = 1, β = 1 + 2/n, γ = 0.75 - 1/(2n), δ = 1 - 1/n, where n is the dimension of x
+
+function g_nelder_mead(f, S, ε; α=1.0, β=2.0, γ=0.5, δ=0.5)
     Δ, y_arr = Inf, f.(S)
     iter = 0
     while Δ > ε
@@ -22,7 +26,7 @@ function nelder_mead(f, S, ε; α=1.0, β=2.0, γ=0.5)
         yr = f(xr)
 
         if yr < yl
-            xe = xm + β*(xr-xm) # expansion point
+            xe = xm + β*(xr - xm) # expansion point
             ye = f(xe)
             S[end],y_arr[end] = ye < yr ? (xe, ye) : (xr, yr)
         elseif yr > ys
@@ -33,7 +37,7 @@ function nelder_mead(f, S, ε; α=1.0, β=2.0, γ=0.5)
             yc = f(xc)
             if yc > yh
                 for i in 2 : length(y_arr)
-                    S[i] = (S[i] + xl)/2
+                    S[i] = xl + δ*(S[i] - xl) # some times this is parameterized as well with δ
                     y_arr[i] = f(S[i])
                 end
             else
@@ -47,4 +51,8 @@ function nelder_mead(f, S, ε; α=1.0, β=2.0, γ=0.5)
     end
     r = S[argmin(y_arr)]
     return f(r), r, iter
+end
+
+function nelder_mead(f, S, ε; α=1.0, β=2.0, γ=0.5)
+    g_nelder_mead(f, S, ε; α=1.0, β=2.0, γ=0.5, δ=0.5)
 end
