@@ -19,7 +19,7 @@ function g_nelder_mead(f, S, ε; α=1.0, β=2.0, γ=0.5, δ=0.5)
         p = sortperm(y_arr) # sort lowest to highest
         S, y_arr = S[p], y_arr[p]
         xl, yl = S[1], y_arr[1] # lowest
-        xh, yh = S[end], y_arr[end] # highest􏵅􏴙􏳴􏵅􏴚􏴅􏳳
+        xh, yh = S[end], y_arr[end] # highest
         xs, ys = S[end-1], y_arr[end-1] # second-highest
         xm = mean(S[1:end-1]) # centroid
         xr = xm + α*(xm - xh) # reflection point
