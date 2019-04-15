@@ -29,7 +29,7 @@ function g_nelder_mead(f, S, ε; α=1.0, β=2.0, γ=0.5, δ=0.5)
             xe = xm + β*(xr - xm) # expansion point
             ye = f(xe)
             S[end],y_arr[end] = ye < yr ? (xe, ye) : (xr, yr)
-        elseif yr > ys
+        elseif yr ≥ ys
             if yr ≤ yh
                 xh, yh, S[end], y_arr[end] = xr, yr, xr, yr
             end
