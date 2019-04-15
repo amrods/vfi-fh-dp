@@ -16,7 +16,7 @@ function logit(x; a = 0, b = 1)
     (b - a) * (exp(x)/(1 + exp(x))) + a
 end
 
-const transf = tab
+const transf = logit
 
 # function that solves last period, for now it uses Optim.jl
 function solvelast!(dp::NamedTuple, Ldict::Array{Ty}, Cdict::Array{Ty}, A1dict::Array{Ty}, Vdict::Array{Ty}) where Ty <: Real
@@ -27,22 +27,23 @@ function solvelast!(dp::NamedTuple, Ldict::Array{Ty}, Cdict::Array{Ty}, A1dict::
     ξ = dp.ξ
     r = dp.r
     T = dp.T
+
     for s in 1:length(grid_A)
         for i in 1:n
-            if (w[T] + ξ[i]) + grid_A[s] * (1+r) < 0 # avoids opt on regions where C < 0 even with L = 1
+#=            if (w[T] + ξ[i]) + grid_A[s] * (1+r) < 0 # avoids opt on regions where C < 0 even with L = 1
                 Vdict[i, s, T] = -Inf
                 Ldict[i, s, T] = NaN
                 A1dict[i, s, T] = NaN
                 Cdict[i, s, T] = NaN
                 iterdict[i, s, T] = -1
-            else
+            else=#
                 opt = optimize( x -> -u((w[T] + ξ[i])*x + grid_A[s]*(1+r), x), 0.0, 1.0 )
                 Ldict[i, s, T] = Optim.minimizer(opt)
                 Cdict[i, s, T] = (w[T] + ξ[i])*Ldict[i, s, T] + grid_A[s]*(1+r)
                 A1dict[i, s, T] = 0.0
                 Vdict[i, s, T] = -Optim.minimum(opt)
                 iterdict[i, s, T] = -1
-            end
+#            end
         end
     end
     return Ldict, Cdict, A1dict, Vdict
@@ -69,12 +70,13 @@ function solverest!(dp::NamedTuple, Ldict::Array{Ty}, Cdict::Array{Ty}, A1dict::
                     Ldict[i, s, t] = NaN
                     A1dict[i, s, t] = NaN
                     Cdict[i, s, t] = NaN
-                    iterdict[i, s, t] = -1
+                    iterdict[i, s, t] = -10
                 else
-                    initial_x = [[100.0, 0.0], [0.0, 0.0], [0.0, 100.0]]
-                    opt = nelder_mead( x -> -(u(transf(x[2])*(w[t] + ξ[i])+ grid_A[s]*(1+r) - x[1], transf(x[2])) +
+                    initial_x = [0.0, 0.0]
+                    initial_simplex = Optim.simplexer(Optim.AffineSimplexer(), initial_x)
+                    opt = nelder_mead( x -> -(u(transf(x[2])*(w[t] + ξ[i]) + grid_A[s]*(1+r) - x[1], transf(x[2])) +
                             β*interp_func_t1(x[1]) ),
-                            initial_x, 1e-12 )
+                            initial_simplex, 1e-4 )
                     Vdict[i, s, t] = -opt[1]
                     xstar = opt[2]
                     Ldict[i, s, t] = transf(xstar[2])
@@ -91,15 +93,15 @@ end
 
 # function that solves the all periods
 function solvemodel!(dp::NamedTuple, Ldict::Array{Ty}, Cdict::Array{Ty}, A1dict::Array{Ty}, Vdict::Array{Ty}, iterdict::Array{Int}; t0::Int=1) where Ty <: Real
-    solvelast!(dp, Ldict, Cdict, A1dict, Vdict)
-    solverest!(dp, Ldict, Cdict, A1dict, Vdict, iterdict; t0=t0)
+    @time solvelast!(dp, Ldict, Cdict, A1dict, Vdict)
+    @time solverest!(dp, Ldict, Cdict, A1dict, Vdict, iterdict; t0=t0)
     return Ldict, Cdict, A1dict, Vdict, iterdict
 end
 
 # instantiate model
 function u(c::R, L::R) where R <: Real
-    if c <= 0 || !(0 <= 1 - L <= 1)
-        return -Inf
+    if c <= 0 || 1 - L <= 0
+        return -1e6
     else
         return log(c) + log(1 - L)
     end
