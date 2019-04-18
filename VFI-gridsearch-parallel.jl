@@ -16,8 +16,8 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict) #where TA
     r = dp.r
     T = dp.T
 
-    @sync @distributed for s in 1:length(grid_A)
-        for i in 1:n
+    @sync @distributed for i in 1:n
+        for s in 1:length(grid_A)
             vstar = -Inf
             Lstar = -Inf
             for L in 0:0.01:1
@@ -27,10 +27,10 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict) #where TA
                     Lstar = L
                 end
             end
-            Ldict[i, s, T] = Lstar
-            Cdict[i, s, T] = (w[T] + ξ[i])*Ldict[i, s, T] + grid_A[s]*(1+r)
-            A1dict[i, s, T] = 0.0
-            Vdict[i, s, T] = vstar
+            Ldict[s, i, T] = Lstar
+            Cdict[s, i, T] = (w[T] + ξ[i])*Ldict[s, i, T] + grid_A[s]*(1+r)
+            A1dict[s, i, T] = 0.0
+            Vdict[s, i, T] = vstar
         end
     end
     return Ldict, Cdict, A1dict, Vdict
@@ -46,9 +46,9 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1) #whe
     T = dp.T
 
     for t in T-1:-1:t0
-        Ev = sum(Vdict[j, :, t+1] for j in 1:n)/n
-        @time @sync @distributed for s in 1:length(grid_A)
-            for i in 1:n
+        Ev = sum(Vdict[:, j, t+1] for j in 1:n)/n
+        @time @sync @distributed for i in 1:n
+            for s in 1:length(grid_A)
                 # x[1] is assets to carry forward, x[2] is labor supply
                 vstar = -Inf
                 Lstar = -Inf
@@ -59,13 +59,13 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1) #whe
                     if v > vstar
                         vstar = v
                         Lstar = L
-                        a1star = a1
+                        a1star = grid_A[a1]
                     end
                 end
-                Vdict[i, s, t] = vstar
-                Ldict[i, s, t] = Lstar
-                A1dict[i, s, t] = a1star
-                Cdict[i, s, t] = Ldict[i, s, t] * (w[t] + ξ[i]) + grid_A[s] * (1+r) - A1dict[i, s, t]
+                Vdict[s, i, t] = vstar
+                Ldict[s, i, t] = Lstar
+                A1dict[s, i, t] = a1star
+                Cdict[s, i, t] = Ldict[s, i, t] * (w[t] + ξ[i]) + grid_A[s] * (1+r) - A1dict[s, i, t]
             end
         end
         println("period ", t, " finished")
@@ -100,7 +100,7 @@ w .= (900 .+ 20.0 .* (1:T) .- 0.5 .* (1:T).^2)
 
 @everywhere grid_A = -1_000:10.0:10_000
 
-Vdict = SharedArray{Float64}((n, length(grid_A), T))
+Vdict = SharedArray{Float64}((length(grid_A), n, T))
 Cdict = similar(Vdict)
 Ldict = similar(Vdict)
 A1dict = similar(Vdict)
