@@ -47,8 +47,8 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
 
     for t in T-1:-1:t0
         Ev = sum(Vdict[:, j, t+1] for j in 1:n)/n
-        @time for i in 1:n
-            @sync @distributed for s in 1:length(grid_A)
+        @time @sync @distributed for i in 1:n
+            for s in 1:length(grid_A)
                 # x[1] is assets to carry forward, x[2] is labor supply
                 vstar = -Inf
                 Lstar = -Inf
@@ -101,10 +101,10 @@ w .= (900 .+ 20.0 .* (1:T) .- 0.5 .* (1:T).^2)
 @everywhere grid_A = -1_000:10.0:10_000
 
 Vdict = SharedArray{Float64}((length(grid_A), n, T))
-Cdict = similar(Vdict)
-Ldict = similar(Vdict)
-A1dict = similar(Vdict)
+Cdict = SharedArray{Float64}((length(grid_A), n, T))#similar(Vdict)
+Ldict = SharedArray{Float64}((length(grid_A), n, T))#similar(Vdict)
+A1dict = SharedArray{Float64}((length(grid_A), n, T))#similar(Vdict)
 
 @everywhere dp = (u=utility, T=T, β=β, r=r, n=n, w=w, grid_A=grid_A, ξ=ξ)
 
-@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict)
+#@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict)
