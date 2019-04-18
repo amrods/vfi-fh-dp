@@ -7,7 +7,7 @@ addprocs(np - 1)
 
 @everywhere using Distributions
 
-function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict) #where TA
+function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
     utility = dp.u
     grid_A = dp.grid_A
     n = dp.n
@@ -36,7 +36,7 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict) #where TA
     return Ldict, Cdict, A1dict, Vdict
 end
 
-function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1) #where TA #<: AbstractArray
+function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
     utility = dp.u
     grid_A = dp.grid_A
     n = dp.n
