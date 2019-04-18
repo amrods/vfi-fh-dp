@@ -47,8 +47,8 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
 
     for t in T-1:-1:t0
         Ev = sum(Vdict[:, j, t+1] for j in 1:n)/n
-        @time @sync @distributed for i in 1:n
-            for s in 1:length(grid_A)
+        for i in 1:n
+            @time @sync @distributed for s in 1:length(grid_A)
                 # x[1] is assets to carry forward, x[2] is labor supply
                 vstar = -Inf
                 Lstar = -Inf
@@ -56,7 +56,7 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
                 for a1 in 1:length(grid_A), L in 0:0.01:1
                     v = utility(L*(w[t] + ξ[i]) + grid_A[s]*(1+r) - grid_A[a1], L) +
                         β*Ev[a1]
-                    if v > vstar
+                    if v >= vstar
                         vstar = v
                         Lstar = L
                         a1star = grid_A[a1]
