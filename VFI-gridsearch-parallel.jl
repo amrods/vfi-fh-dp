@@ -6,6 +6,7 @@ np = minimum([Sys.CPU_THREADS, 8])
 addprocs(np - 1)
 
 @everywhere using Distributions
+@everywhere using QuantEcon
 
 function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
     utility = dp.u
@@ -15,6 +16,7 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
     ξ = dp.ξ
     r = dp.r
     T = dp.T
+    β = dp.β
 
     @sync @distributed for i in 1:n
         for s in 1:length(grid_A)
@@ -44,6 +46,7 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
     ξ = dp.ξ
     r = dp.r
     T = dp.T
+    β = dp.β
 
     for t in T-1:-1:t0
         Ev = sum(Vdict[:, j, t+1] for j in 1:n)/n
