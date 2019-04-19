@@ -107,4 +107,4 @@ A1dict = SharedArray{Float64}((length(grid_A), n, T))#similar(Vdict)
 
 @everywhere dp = (u=utility, T=T, β=β, r=r, n=n, w=w, grid_A=grid_A, ξ=ξ)
 
-#@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict)
+@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict)
