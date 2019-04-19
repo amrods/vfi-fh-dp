@@ -6,7 +6,7 @@ np = minimum([Sys.CPU_THREADS, 8])
 addprocs(np - 1)
 
 @everywhere using Parameters
-@everywhere using QuantEcon: rouwenhorst
+using QuantEcon: rouwenhorst
 using LinearAlgebra
 
 function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
