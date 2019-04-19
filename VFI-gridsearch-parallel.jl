@@ -72,7 +72,7 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
                 a1star = -Inf
                 for a1 in 1:length(grid_A), L in 0:0.01:1
                     v = utility(L*(w[t] + ξ[i]) + grid_A[s]*(1+r) - grid_A[a1], L) +
-                        β*EV[a1]
+                        β*EV[a1, i]
                     if v >= vstar
                         vstar = v
                         Lstar = L
