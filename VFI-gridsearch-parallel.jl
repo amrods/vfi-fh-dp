@@ -5,17 +5,26 @@ using Distributed
 np = minimum([Sys.CPU_THREADS, 8])
 addprocs(np - 1)
 
-@everywhere using Distributions
+@everywhere using Parameters
+@everywhere using QuantEcon: rouwenhorst
+using LinearAlgebra
 
 function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
     utility = dp.u
     grid_A = dp.grid_A
     n = dp.n
     w = dp.w
-    ξ = dp.ξ
     r = dp.r
     T = dp.T
     β = dp.β
+    ρ = dp.ρ
+    σ = dp.σ
+    μ = dp.μ
+
+    # discretize ar(1) process in wages: rouwenhorst(n, ρ, σ, μ)
+    mc = rouwenhorst(n, ρ, σ, μ)
+    ξ = mc.state_values
+    ℙ = mc.p
 
     @sync @distributed for i in 1:n
         for s in 1:length(grid_A)
@@ -23,7 +32,7 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
             Lstar = -Inf
             for L in 0:0.01:1
                 v = utility(L*(w[T] + ξ[i]) + grid_A[s]*(1+r), L)
-                if v > vstar
+                if v >= vstar
                     vstar = v
                     Lstar = L
                 end
@@ -42,22 +51,28 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
     grid_A = dp.grid_A
     n = dp.n
     w = dp.w
-    ξ = dp.ξ
     r = dp.r
     T = dp.T
     β = dp.β
+    ρ = dp.ρ
+    σ = dp.σ
+    μ = dp.μ
+
+    # discretize ar(1) process in wages: rouwenhorst(n, ρ, σ, μ)
+    mc = rouwenhorst(n, ρ, σ, μ)
+    ξ = mc.state_values
+    ℙ = mc.p
 
     for t in T-1:-1:t0
-        Ev = sum(Vdict[:, j, t+1] for j in 1:n)/n
+        EV = transpose( ℙ * transpose(Vdict[:, :, t+1]) )
         @time @sync @distributed for i in 1:n
             for s in 1:length(grid_A)
-                # x[1] is assets to carry forward, x[2] is labor supply
                 vstar = -Inf
                 Lstar = -Inf
                 a1star = -Inf
                 for a1 in 1:length(grid_A), L in 0:0.01:1
                     v = utility(L*(w[t] + ξ[i]) + grid_A[s]*(1+r) - grid_A[a1], L) +
-                        β*Ev[a1]
+                        β*EV[a1]
                     if v >= vstar
                         vstar = v
                         Lstar = L
@@ -81,7 +96,7 @@ function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
     return Ldict, Cdict, A1dict, Vdict
 end
 
-@everywhere function utility(c, L)
+@everywhere function utility(c::R, L::R) where R <: Real
     if c <= 0 || 1 - L <= 0
         return -1e6
     else
@@ -89,24 +104,18 @@ end
     end
 end
 
-@everywhere T = 65 # terminal period
-@everywhere β = 0.95 # discount factor
-@everywhere r = 0.05 # interest rate
-@everywhere dist = LogNormal(0, 1) # distribution of ξ
-@everywhere n = 5 # number of points of support of ξ
-
+@everywhere T = 65
 @everywhere w = Vector{Float64}(undef, T) # exogenous wages
 w .= (900 .+ 20.0 .* (1:T) .- 0.5 .* (1:T).^2)
 
-@everywhere ξ = quantile.(dist, 0:1/n:prevfloat(1.0))
+# create model object with default values for some parameters
+@everywhere Model = @with_kw (u=utility, n=5, w, r=0.05, T=65, β=0.95, grid_A=-1_000:10.0:10_000, ρ=0.7, σ=15.0, μ=0.0)
 
-@everywhere grid_A = -1_000:10.0:10_000
+@everywhere dp = Model(w=w)
 
-Vdict = SharedArray{Float64}((length(grid_A), n, T))
-Cdict = SharedArray{Float64}((length(grid_A), n, T))#similar(Vdict)
-Ldict = SharedArray{Float64}((length(grid_A), n, T))#similar(Vdict)
-A1dict = SharedArray{Float64}((length(grid_A), n, T))#similar(Vdict)
+Vdict = SharedArray{Float64}((length(dp.grid_A), dp.n, dp.T))
+Cdict = SharedArray{Float64}((length(dp.grid_A), dp.n, dp.T))
+Ldict = SharedArray{Float64}((length(dp.grid_A), dp.n, dp.T))
+A1dict = SharedArray{Float64}((length(dp.grid_A), dp.n, dp.T))
 
-@everywhere dp = (u=utility, T=T, β=β, r=r, n=n, w=w, grid_A=grid_A, ξ=ξ)
-
-@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict)
+@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict);
