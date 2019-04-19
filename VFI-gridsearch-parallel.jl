@@ -96,7 +96,7 @@ function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
     return Ldict, Cdict, A1dict, Vdict
 end
 
-@everywhere function utility(c::R, L::R) where R <: Real
+@everywhere function utility(c, L)
     if c <= 0 || 1 - L <= 0
         return -1e6
     else
