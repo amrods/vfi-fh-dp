@@ -5,8 +5,6 @@ using Distributed
 np = minimum([Sys.CPU_THREADS, 8])
 addprocs(np - 1)
 
-@everywhere using Distributions
-@everywhere using QuantEcon
 
 function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
     utility = dp.u
