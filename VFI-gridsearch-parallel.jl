@@ -3,7 +3,7 @@ using SharedArrays
 using Distributed
 
 np = minimum([Sys.CPU_THREADS, 8])
-addprocs(np - 1)
+procs = addprocs(np - 1)
 
 @everywhere using Parameters
 using QuantEcon: rouwenhorst
@@ -98,7 +98,7 @@ end
 
 @everywhere function utility(c, L)
     if c <= 0 || 1 - L <= 0
-        return -1e6
+        return -1e9
     else
         return log(c) + log(1 - L)
     end
@@ -119,3 +119,5 @@ Ldict = SharedArray{Float64}((length(dp.grid_A), dp.n, dp.T))
 A1dict = SharedArray{Float64}((length(dp.grid_A), dp.n, dp.T))
 
 @time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict);
+
+rmprocs(procs)
