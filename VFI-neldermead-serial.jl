@@ -42,12 +42,13 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
             A1dict[s, i, T] = 0.0
             Cdict[s, i, T] = (w[T] + ξ[i])*Ldict[s, i, T] + grid_A[s]*(1+r)
             Vdict[s, i, T] = -Optim.minimum(opt)
+            convdict[s, i, T] = Optim.converged(opt)
         end
     end
     return Ldict, Cdict, A1dict, Vdict
 end
 
-function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
+function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1)
     utility = dp.u
     grid_A = dp.grid_A
     n = dp.n
@@ -70,12 +71,22 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
         EV = LinearInterpolation( (grid_A, ξ), transpose( ℙ * transpose(Vdict[:, :, t+1])), extrapolation_bc = Line() )
         @time for i in 1:n
             for s in 1:length(grid_A)
+                # skip optimization for situations in which consumption would be negative
+                if (w[t] + ξ[i]) + grid_A[s] * (1+r) < 0
+                    convdict[s, i, t] = true
+                    Ldict[s, i, t] = NaN
+                    A1dict[s, i, t] = -1000.0
+                    Cdict[s, i, t] = NaN
+                    Vdict[s, i, t] = -1e9
+                    continue
+                end
                 # x[1] is assets to carry forward, x[2] is labor supply
                 initial_x = [A1dict[s, i, t+1], 0.0]
                 opt = optimize(x -> -( utility(transf(x[2])*(w[t] + ξ[i]) + grid_A[s]*(1+r) - x[1], transf(x[2])) + β*EV(x[1], ξ[i]) ),
                         initial_x,
-                        NelderMead(), Optim.Options(show_trace=false))
+                        NelderMead(), Optim.Options(show_trace=false, iterations=1_000))
                 xstar = Optim.minimizer(opt)
+                convdict[s, i, t] = Optim.converged(opt)
                 Ldict[s, i, t] = transf(xstar[2])
                 A1dict[s, i, t] = xstar[1]
                 Cdict[s, i, t] = (w[t] + ξ[i])*Ldict[s, i, t] + grid_A[s]*(1+r)
@@ -84,13 +95,13 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
         end
         println("period ", t, " finished")
     end
-    return Ldict, Cdict, A1dict, Vdict
+    return Ldict, Cdict, A1dict, Vdict, convdict
 end
 
-function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
+function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1)
     @time solvelast!(dp, Ldict, Cdict, A1dict, Vdict)
-    @time solverest!(dp, Ldict, Cdict, A1dict, Vdict; t0=t0)
-    return Ldict, Cdict, A1dict, Vdict
+    @time solverest!(dp, Ldict, Cdict, A1dict, Vdict, convdict; t0=t0)
+    return Ldict, Cdict, A1dict, Vdict, convdict
 end
 
 function utility(c, L)
@@ -114,5 +125,6 @@ Vdict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
 Cdict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
 Ldict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
 A1dict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
+convdict = Array{Bool}(undef, (length(dp.grid_A), dp.n, dp.T))
 
-@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict);
+#@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict, convdict);
