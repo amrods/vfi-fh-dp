@@ -118,6 +118,6 @@ Cdict = SharedArray{Float64}((length(dp.grid_A), dp.n, dp.T))
 Ldict = SharedArray{Float64}((length(dp.grid_A), dp.n, dp.T))
 A1dict = SharedArray{Float64}((length(dp.grid_A), dp.n, dp.T))
 
-@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict);
+#@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict);
 
-rmprocs(procs)
+#rmprocs(procs)
