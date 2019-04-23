@@ -112,4 +112,4 @@ Cdict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
 Ldict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
 A1dict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
 
-@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict);
+#@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict);
