@@ -5,6 +5,17 @@ using LinearAlgebra
 using Interpolations
 using Optim
 
+# transformation functions
+# closed interval [a, b]
+function transf(x; a = 0, b = 1)
+    (b + a)/2 + (b - a)/2*((2x)/(1 + x^2))
+end
+
+# open interval (a, b)
+function logit(x; a = 0, b = 1)
+    (b - a) * (exp(x)/(1 + exp(x))) + a
+end
+
 function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
     utility = dp.u
     grid_A = dp.grid_A
@@ -48,6 +59,8 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
     σ = dp.σ
     μ = dp.μ
 
+    transf = logit
+
     # discretize ar(1) process in wages: rouwenhorst(n, ρ, σ, μ)
     mc = rouwenhorst(n, ρ, σ, μ)
     ξ = mc.state_values
@@ -59,14 +72,14 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
             for s in 1:length(grid_A)
                 # x[1] is assets to carry forward, x[2] is labor supply
                 initial_x = [A1dict[s, i, t+1], 0.0]
-                opt = optimize(x -> -( utility(x[2]*(w[T] + ξ[i]) + grid_A[s]*(1+r) - x[1], x[2]) + β*EV(x[1], ξ[i]) ),
+                opt = optimize(x -> -( utility(transf(x[2])*(w[t] + ξ[i]) + grid_A[s]*(1+r) - x[1], transf(x[2])) + β*EV(x[1], ξ[i]) ),
                         initial_x,
                         NelderMead(), Optim.Options(show_trace=false))
                 xstar = Optim.minimizer(opt)
-                Ldict[s, i, T] = xstar[2]
-                A1dict[s, i, T] = xstar[1]
-                Cdict[s, i, T] = (w[T] + ξ[i])*Ldict[s, i, T] + grid_A[s]*(1+r)
-                Vdict[s, i, T] = -Optim.minimum(opt)
+                Ldict[s, i, t] = transf(xstar[2])
+                A1dict[s, i, t] = xstar[1]
+                Cdict[s, i, t] = (w[t] + ξ[i])*Ldict[s, i, t] + grid_A[s]*(1+r)
+                Vdict[s, i, t] = -Optim.minimum(opt)
             end
         end
         println("period ", t, " finished")
@@ -102,4 +115,4 @@ Cdict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
 Ldict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
 A1dict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
 
-#@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict);
+@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict);
