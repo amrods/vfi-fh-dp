@@ -1,18 +1,23 @@
 
-using Parameters
+using SharedArrays
+using Distributed
+
+np = minimum([Sys.CPU_THREADS, 8])
+procs = addprocs(np - 1)
+
+@everywhere using Parameters
 using QuantEcon: rouwenhorst
-using LinearAlgebra
-using Interpolations
-using Optim
+@everywhere using Interpolations
+@everywhere using Optim
 
 # transformation functions
 # closed interval [a, b]
-function tab(x; a = 0, b = 1)
+@everywhere function tab(x; a = 0, b = 1)
     (b + a)/2 + (b - a)/2*((2x)/(1 + x^2))
 end
 
 # open interval (a, b)
-function logit(x; a = 0, b = 1)
+@everywhere function logit(x; a = 0, b = 1)
     (b - a) * (exp(x)/(1 + exp(x))) + a
 end
 
@@ -33,7 +38,7 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
     ξ = mc.state_values
     ℙ = mc.p
 
-    for i in 1:n
+    @sync @distributed for i in 1:n
         for s in 1:length(grid_A)
             # use bisection here
             opt = optimize(x -> -utility(x*(w[T] + ξ[i]) + grid_A[s]*(1+r), x), 0.0, 1.0)
@@ -48,7 +53,7 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
     return Ldict, Cdict, A1dict, Vdict
 end
 
-function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1)
+function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1, alg=NewtonTrustRegion())
     utility = dp.u
     grid_A = dp.grid_A
     n = dp.n
@@ -68,7 +73,7 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::I
     ℙ = mc.p
 
     for t in T-1:-1:t0
-        #=@time=# for i in 1:n
+        #=@time=# @sync @distributed for i in 1:n
             EV = LinearInterpolation( grid_A, sum(ℙ[i, i′] .* Vdict[:, i′, t+1] for i′ in 1:n), extrapolation_bc = Line() )
             for s in 1:length(grid_A)
                 # skip optimization for situations in which consumption would be negative
@@ -84,7 +89,7 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::I
                 initial_x = [A1dict[s, i, t+1], 0.0]
                 opt = optimize(x -> -( utility(transf(x[2])*(w[t] + ξ[i]) + grid_A[s]*(1+r) - x[1], transf(x[2])) + β*EV(x[1]) ),
                         initial_x,
-                        NelderMead(),
+                        alg,
                         Optim.Options(iterations=1_000, g_tol=1e-4, x_tol=1e-4, f_tol=1e-4))
                 xstar = Optim.minimizer(opt)
                 convdict[s, i, t] = Optim.converged(opt)
@@ -99,13 +104,13 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::I
     return Ldict, Cdict, A1dict, Vdict, convdict
 end
 
-function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1)
+function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1, alg=NewtonTrustRegion())
     solvelast!(dp, Ldict, Cdict, A1dict, Vdict)
-    solverest!(dp, Ldict, Cdict, A1dict, Vdict, convdict; t0=t0)
+    solverest!(dp, Ldict, Cdict, A1dict, Vdict, convdict; t0=t0, alg=alg)
     return Ldict, Cdict, A1dict, Vdict, convdict
 end
 
-function utility(c, L)
+@everywhere function utility(c, L)
     if c <= 0 || 1 - L <= 0
         return -1e9
     else
@@ -113,19 +118,22 @@ function utility(c, L)
     end
 end
 
-T = 65
-w = Vector{Float64}(undef, T) # exogenous wages
+@everywhere T = 65
+@everywhere w = Vector{Float64}(undef, T) # exogenous wages
 w .= (900 .+ 20.0 .* (1:T) .- 0.5 .* (1:T).^2)
 
 # create model object with default values for some parameters
-Model = @with_kw (u=utility, n=5, w, r=0.05, T=65, β=0.95, grid_A=-1_000:10.0:10_000, ρ=0.7, σ=15.0, μ=0.0)
+@everywhere Model = @with_kw (u=utility, n=5, w, r=0.05, T=65, β=0.95,
+                                grid_A=-1_000:10.0:10_000, ρ=0.7, σ=15.0, μ=0.0)
 
-dp = Model(w=w)
+@everywhere dp = Model(w=w)
 
-Vdict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
-Cdict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
-Ldict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
-A1dict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
-convdict = Array{Bool}(undef, (length(dp.grid_A), dp.n, dp.T))
+Vdict = SharedArray{Float64}((length(dp.grid_A), dp.n, dp.T))
+Cdict = SharedArray{Float64}((length(dp.grid_A), dp.n, dp.T))
+Ldict = SharedArray{Float64}((length(dp.grid_A), dp.n, dp.T))
+A1dict = SharedArray{Float64}((length(dp.grid_A), dp.n, dp.T))
+convdict = SharedArray{Bool}((length(dp.grid_A), dp.n, dp.T))
 
 #@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict, convdict);
+
+#rmprocs(procs)
