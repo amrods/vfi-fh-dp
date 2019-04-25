@@ -69,16 +69,17 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::I
             EV = LinearInterpolation( grid_A, sum(ℙ[i, i′] .* Vdict[:, i′, t+1] for i′ in 1:n), extrapolation_bc = Line() )
             for s in 1:length(grid_A)
                 # skip optimization for situations in which consumption would be negative
-                if (w[t] + ξ[i]) + grid_A[s] * (1+r) < 0 || Vdict[s, i, t+1] == -Inf
+                if (w[t] + ξ[i]) + grid_A[s] * (1+r) < 0
                     convdict[s, i, t] = true
-                    Ldict[s, i, t] = -1000.0
-                    A1dict[s, i, t] = -1000.0
-                    Cdict[s, i, t] = -1000.0
+                    Ldict[s, i, t] = NaN
+                    A1dict[s, i, t] = NaN
+                    Cdict[s, i, t] = NaN
                     Vdict[s, i, t] = -Inf
                     continue
                 end
                 # x[1] is assets to carry forward, x[2] is labor supply
-                initial_x = [A1dict[s, i, t+1], 0.0]
+                a1_0 = isnan(A1dict[s, i, t+1]) ? 0.0 : A1dict[s, i, t+1]
+                initial_x = [a1_0, 0.0]
                 opt = optimize(x -> -( utility(transf(x[2])*(w[t] + ξ[i]) + grid_A[s]*(1+r) - x[1], transf(x[2])) + β*EV(x[1]) ),
                         initial_x,
                         alg,
