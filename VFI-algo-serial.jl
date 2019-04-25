@@ -16,7 +16,7 @@ function logit(x; a = 0, b = 1)
 end
 
 function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
-    utility = dp.u
+    utility = dp.utility
     grid_A = dp.grid_A
     n = dp.n
     w = dp.w
@@ -48,7 +48,7 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
 end
 
 function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1, alg=NewtonTrustRegion())
-    utility = dp.u
+    utility = dp.utility
     grid_A = dp.grid_A
     n = dp.n
     w = dp.w
@@ -117,7 +117,7 @@ w = Vector{Float64}(undef, T) # exogenous wages
 w .= (900 .+ 20.0 .* (1:T) .- 0.5 .* (1:T).^2)
 
 # create model object with default values for some parameters
-Model = @with_kw (u=utility, n=15, w, r=0.05, T=65, β=0.95,
+Model = @with_kw (utility=utility, n=15, w, r=0.05, T=65, β=0.95,
                                 grid_A=-1_000:10.0:10_000, ρ=0.9, σ=0.8, μ=0.0)
 
 dp = Model(w=w)

@@ -10,7 +10,7 @@ using QuantEcon: rouwenhorst
 using LinearAlgebra
 
 function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
-    utility = dp.u
+    utility = dp.utility
     grid_A = dp.grid_A
     n = dp.n
     w = dp.w
@@ -47,7 +47,7 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
 end
 
 function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
-    utility = dp.u
+    utility = dp.utility
     grid_A = dp.grid_A
     n = dp.n
     w = dp.w
@@ -109,7 +109,7 @@ end
 w .= (900 .+ 20.0 .* (1:T) .- 0.5 .* (1:T).^2)
 
 # create model object with default values for some parameters
-@everywhere Model = @with_kw (u=utility, n=5, w, r=0.05, T=65, β=0.95, grid_A=-1_000:10.0:10_000, ρ=0.7, σ=15.0, μ=0.0)
+@everywhere Model = @with_kw (utility=utility, n=5, w, r=0.05, T=65, β=0.95, grid_A=-1_000:10.0:10_000, ρ=0.7, σ=15.0, μ=0.0)
 
 @everywhere dp = Model(w=w)
 
