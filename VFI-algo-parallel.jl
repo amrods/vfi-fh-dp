@@ -35,7 +35,7 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
 
     # discretize ar(1) process in wages: rouwenhorst(n, ρ, σ, μ)
     mc = rouwenhorst(n, ρ, σ, μ)
-    ξ = mc.state_values
+    ξ = exp.(mc.state_values)
     ℙ = mc.p
 
     @sync @distributed for i in 1:n
@@ -69,7 +69,7 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::I
 
     # discretize ar(1) process in wages: rouwenhorst(n, ρ, σ, μ)
     mc = rouwenhorst(n, ρ, σ, μ)
-    ξ = mc.state_values
+    ξ = exp.(mc.state_values)
     ℙ = mc.p
 
     for t in T-1:-1:t0
@@ -123,8 +123,8 @@ end
 w .= (900 .+ 20.0 .* (1:T) .- 0.5 .* (1:T).^2)
 
 # create model object with default values for some parameters
-@everywhere Model = @with_kw (u=utility, n=5, w, r=0.05, T=65, β=0.95,
-                                grid_A=-1_000:10.0:10_000, ρ=0.7, σ=15.0, μ=0.0)
+@everywhere Model = @with_kw (u=utility, n=15, w, r=0.05, T=65, β=0.95,
+                                grid_A=-1_000:10.0:10_000, ρ=0.9, σ=0.8, μ=0.0)
 
 @everywhere dp = Model(w=w)
 
