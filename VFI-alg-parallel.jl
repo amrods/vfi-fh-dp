@@ -53,7 +53,7 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
     return Ldict, Cdict, A1dict, Vdict
 end
 
-function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1, alg=NewtonTrustRegion())
+function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1, transf=tab, alg=NewtonTrustRegion())
     utility = dp.utility
     grid_A = dp.grid_A
     n = dp.n
@@ -64,8 +64,6 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::I
     ρ = dp.ρ
     σ = dp.σ
     μ = dp.μ
-
-    transf = tab
 
     # discretize ar(1) process in wages: rouwenhorst(n, ρ, σ, μ)
     mc = rouwenhorst(n, ρ, σ, μ)
@@ -104,9 +102,9 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::I
     return Ldict, Cdict, A1dict, Vdict, convdict
 end
 
-function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1, alg=NewtonTrustRegion())
+function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1, transf=tab, alg=NewtonTrustRegion())
     solvelast!(dp, Ldict, Cdict, A1dict, Vdict)
-    solverest!(dp, Ldict, Cdict, A1dict, Vdict, convdict; t0=t0, alg=alg)
+    solverest!(dp, Ldict, Cdict, A1dict, Vdict, convdict; t0=t0, transf=transf, alg=alg)
     return Ldict, Cdict, A1dict, Vdict, convdict
 end
 
