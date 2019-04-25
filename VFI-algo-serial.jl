@@ -129,5 +129,3 @@ A1dict = Array{Float64}(undef, (length(dp.grid_A), dp.n, dp.T))
 convdict = Array{Bool}(undef, (length(dp.grid_A), dp.n, dp.T))
 
 #@time solvemodel!(dp, Ldict, Cdict, A1dict, Vdict, convdict);
-
-#rmprocs(procs)
