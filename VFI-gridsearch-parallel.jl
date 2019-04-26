@@ -64,8 +64,8 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
     ℙ = mc.p
 
     for t in T-1:-1:t0
-        EV = transpose( ℙ * transpose(Vdict[:, :, t+1]) )
-        @time @sync @distributed for i in 1:n
+        @sync @distributed for i in 1:n
+            EV = LinearInterpolation( grid_A, sum(ℙ[i, i′] .* Vdict[:, i′, t+1] for i′ in 1:n), extrapolation_bc = Line() )
             for s in 1:length(grid_A)
                 vstar = -Inf
                 Lstar = -Inf
@@ -91,8 +91,8 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
 end
 
 function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
-    @time solvelast!(dp, Ldict, Cdict, A1dict, Vdict)
-    @time solverest!(dp, Ldict, Cdict, A1dict, Vdict; t0=t0)
+    solvelast!(dp, Ldict, Cdict, A1dict, Vdict)
+    solverest!(dp, Ldict, Cdict, A1dict, Vdict; t0=t0)
     return Ldict, Cdict, A1dict, Vdict
 end
 
