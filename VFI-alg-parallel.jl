@@ -13,7 +13,7 @@ using QuantEcon: rouwenhorst
 # transformation functions
 # closed interval [a, b]
 @everywhere function tab(x; a = 0, b = 1)
-    (b + a)/2 + (b - a)/2*((2x)/(1 + x^2))
+    (b + a)/2 + (b - a)/2 * ((2x)/(1 + x^2))
 end
 
 # open interval (a, b)
