@@ -7,7 +7,6 @@ procs = addprocs(np - 1)
 
 @everywhere using Parameters
 using QuantEcon: rouwenhorst
-@everywhere using Interpolations
 
 function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
     utility = dp.utility
@@ -65,7 +64,7 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict; t0::Int=1)
 
     for t in T-1:-1:t0
         @sync @distributed for i in 1:n
-            EV = LinearInterpolation( grid_A, sum(ℙ[i, i′] .* Vdict[:, i′, t+1] for i′ in 1:n), extrapolation_bc = Line() )
+            EV = sum(ℙ[i, i′] .* Vdict[:, i′, t+1] for i′ in 1:n)
             for s in 1:length(grid_A)
                 vstar = -Inf
                 Lstar = -Inf
