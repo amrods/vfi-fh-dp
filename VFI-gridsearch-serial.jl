@@ -1,7 +1,7 @@
 
 using Parameters
 using QuantEcon: rouwenhorst
-using LinearAlgebra
+using Interpolations
 
 function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
     utility = dp.utility

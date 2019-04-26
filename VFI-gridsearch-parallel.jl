@@ -7,7 +7,7 @@ procs = addprocs(np - 1)
 
 @everywhere using Parameters
 using QuantEcon: rouwenhorst
-using LinearAlgebra
+@everywhere using Interpolations
 
 function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
     utility = dp.utility
