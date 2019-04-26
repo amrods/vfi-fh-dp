@@ -15,7 +15,7 @@ function logit(x; a = 0, b = 1)
     (b - a) * (exp(x)/(1 + exp(x))) + a
 end
 
-function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
+function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict)
     utility = dp.utility
     grid_A = dp.grid_A
     n = dp.n
@@ -44,7 +44,7 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict)
             convdict[s, i, T] = Optim.converged(opt)
         end
     end
-    return Ldict, Cdict, A1dict, Vdict
+    return Ldict, Cdict, A1dict, Vdict, convdict
 end
 
 function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1, transf=tab, alg=NewtonTrustRegion())
@@ -98,7 +98,7 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::I
 end
 
 function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1, transf=tab, alg=NewtonTrustRegion())
-    solvelast!(dp, Ldict, Cdict, A1dict, Vdict)
+    solvelast!(dp, Ldict, Cdict, A1dict, Vdict, convdict)
     solverest!(dp, Ldict, Cdict, A1dict, Vdict, convdict; t0=t0, transf=transf, alg=alg)
     return Ldict, Cdict, A1dict, Vdict, convdict
 end
