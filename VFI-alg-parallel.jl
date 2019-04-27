@@ -123,7 +123,7 @@ w .= (900 .+ 20.0 .* (1:T) .- 0.5 .* (1:T).^2)
 
 # create model object with default values for some parameters
 @everywhere Model = @with_kw (utility=utility, n=15, w, r=0.05, T=65, β=0.95,
-                                grid_A=-300:10.0:9_000, ρ=0.9, σ=0.8, μ=0.0)
+                                grid_A=-1_000:10.0:10_000, ρ=0.9, σ=0.8, μ=0.0)
 
 @everywhere dp = Model(w=w)
 
