@@ -100,7 +100,7 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict;
     return Ldict, Cdict, A1dict, Vdict, convdict
 end
 
-function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1, transf=tab, alg=NewtonTrustRegion())
+function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict;
                     t0::Int=1, transf=tab, alg=NewtonTrustRegion(), autodiff=:finite,
                     options=Optim.Options(iterations=1_000, g_tol=1e-4, x_tol=1e-4, f_tol=1e-4))
     solvelast!(dp, Ldict, Cdict, A1dict, Vdict, convdict)
