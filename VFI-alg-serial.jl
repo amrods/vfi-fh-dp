@@ -47,7 +47,9 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict)
     return Ldict, Cdict, A1dict, Vdict, convdict
 end
 
-function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1, transf=tab, alg=NewtonTrustRegion())
+function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict;
+                    t0::Int=1, transf=tab, alg=NewtonTrustRegion(), autodiff=:finite,
+                    options=Optim.Options(iterations=1_000, g_tol=1e-4, x_tol=1e-4, f_tol=1e-4))
     utility = dp.utility
     grid_A = dp.grid_A
     n = dp.n
@@ -83,7 +85,8 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::I
                 opt = optimize(x -> -( utility(transf(x[2])*(w[t] + ξ[i]) + grid_A[s]*(1+r) - x[1], transf(x[2])) + β*EV(x[1]) ),
                         initial_x,
                         alg,
-                        Optim.Options(iterations=1_000, g_tol=1e-4, x_tol=1e-4, f_tol=1e-4))
+                        options,
+                        autodiff = autodiff)
                 xstar = Optim.minimizer(opt)
                 convdict[s, i, t] = Optim.converged(opt)
                 Ldict[s, i, t] = transf(xstar[2])
@@ -98,9 +101,12 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::I
 end
 
 function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; t0::Int=1, transf=tab, alg=NewtonTrustRegion())
+                    t0::Int=1, transf=tab, alg=NewtonTrustRegion(), autodiff=:finite,
+                    options=Optim.Options(iterations=1_000, g_tol=1e-4, x_tol=1e-4, f_tol=1e-4))
     solvelast!(dp, Ldict, Cdict, A1dict, Vdict, convdict)
-    solverest!(dp, Ldict, Cdict, A1dict, Vdict, convdict; t0=t0, transf=transf, alg=alg)
-    return Ldict, Cdict, A1dict, Vdict, convdict
+    solverest!(dp, Ldict, Cdict, A1dict, Vdict, convdict;
+                t0=t0, transf=transf, alg=alg, autodiff=autodiff, options=options)
+return Ldict, Cdict, A1dict, Vdict, convdict
 end
 
 function utility(c, L)
