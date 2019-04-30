@@ -3,6 +3,7 @@ using Parameters
 using QuantEcon: rouwenhorst
 using Interpolations
 using Optim
+using LineSearches
 
 # transformation functions
 # closed interval [a, b]
@@ -48,7 +49,8 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict)
 end
 
 function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict;
-                    t0::Int=1, transf=tab, alg=NewtonTrustRegion(), autodiff=:finite,
+                    t0::Int=1, transf=tab, alg=ConjugateGradient(linesearch=LineSearches.BackTracking()),
+                    autodiff=:forward,
                     options=Optim.Options(iterations=1_000, g_tol=1e-4, x_tol=1e-4, f_tol=1e-4))
     utility = dp.utility
     grid_A = dp.grid_A
@@ -101,7 +103,8 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict;
 end
 
 function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict;
-                    t0::Int=1, transf=tab, alg=NewtonTrustRegion(), autodiff=:finite,
+                    t0::Int=1, transf=tab, alg=ConjugateGradient(linesearch=LineSearches.BackTracking()),
+                    autodiff=:forward,
                     options=Optim.Options(iterations=1_000, g_tol=1e-4, x_tol=1e-4, f_tol=1e-4))
     solvelast!(dp, Ldict, Cdict, A1dict, Vdict, convdict)
     solverest!(dp, Ldict, Cdict, A1dict, Vdict, convdict;
