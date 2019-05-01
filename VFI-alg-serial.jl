@@ -109,7 +109,7 @@ function solvemodel!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict;
     solvelast!(dp, Ldict, Cdict, A1dict, Vdict, convdict)
     solverest!(dp, Ldict, Cdict, A1dict, Vdict, convdict;
                 t0=t0, transf=transf, alg=alg, autodiff=autodiff, options=options)
-return Ldict, Cdict, A1dict, Vdict, convdict
+    return Ldict, Cdict, A1dict, Vdict, convdict
 end
 
 function utility(c, L)
