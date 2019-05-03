@@ -89,7 +89,8 @@ function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict;
                 end
                 # x[1] is assets to carry forward, x[2] is labor supply
                 a1_0 = isnan(A1dict[s, i, t+1]) ? 0.0 : A1dict[s, i, t+1]
-                initial_x = [a1_0, 0.0]
+                l_0 = isnan(Ldict[s, i, t+1]) ? 0.0 : Ldict[s, i, t+1]
+                initial_x = [a1_0, l_0]
                 opt = optimize(x -> -( utility(transf(x[2])*(w[t] + ξ[i]) + grid_A[s]*(1+r) - x[1], transf(x[2])) + β*EV(x[1]) ),
                         initial_x,
                         alg,
