@@ -16,7 +16,7 @@ function logit(x; a = 0, b = 1)
     (b - a) * (exp(x)/(1 + exp(x))) + a
 end
 
-function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict)
+function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; alg=GoldenSection())
     utility = dp.utility
     grid_A = dp.grid_A
     n = dp.n
@@ -36,7 +36,7 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict)
     for i in 1:n
         for s in 1:length(grid_A)
             # use bisection here
-            opt = optimize(x -> -utility(x*(w[T] + ξ[i]) + grid_A[s]*(1+r), x), 0.0, 1.0)
+            opt = optimize(x -> -utility(x*(w[T] + ξ[i]) + grid_A[s]*(1+r), x), 0.0, 1.0, alg)
             xstar = Optim.minimizer(opt)
             Ldict[s, i, T] = xstar
             A1dict[s, i, T] = 0.0
