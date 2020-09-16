@@ -13,7 +13,7 @@ end
 
 # open interval (a, b)
 function logit(x; a = 0, b = 1)
-    (b - a) * (exp(x)/(1 + exp(x))) + a
+    (b - a) * (1/(1 + exp(-x))) + a
 end
 
 function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; alg=GoldenSection())
