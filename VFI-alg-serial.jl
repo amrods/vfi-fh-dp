@@ -49,7 +49,7 @@ function solvelast!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict; alg=G
 end
 
 function solverest!(dp::NamedTuple, Ldict, Cdict, A1dict, Vdict, convdict;
-                    t0::Int=1, transf=tab, alg=ConjugateGradient(linesearch=LineSearches.BackTracking()),
+                    t0::Int=1, transf=tab, alg=GradientDescent(linesearch=LineSearches.BackTracking()),
                     autodiff=:forward,
                     options=Optim.Options(iterations=1_000, g_tol=1e-4, x_tol=1e-4, f_tol=1e-4))
     utility = dp.utility
